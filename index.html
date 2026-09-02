@@ -102,6 +102,27 @@
     color:var(--muted-2);
     font-variant-numeric: tabular-nums;
   }
+  .reorder-btns{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .reorder-btn{
+    width:22px; height:16px;
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    font-size:9px;
+    line-height:1;
+    cursor:pointer;
+    padding:0;
+  }
+  .reorder-btn:disabled{
+    color:var(--muted-2);
+    opacity:.3;
+    cursor:default;
+  }
   .del-project{
     color:var(--muted-2);
     font-size:18px;
@@ -632,16 +653,47 @@ function showToast(msg){
 }
 
 /* ---------- Project view ---------- */
+function moveProject(id, dir){
+  const idx = data.projects.findIndex(p=>p.id===id);
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= data.projects.length) return;
+  const [proj] = data.projects.splice(idx, 1);
+  data.projects.splice(newIdx, 0, proj);
+  save(); render();
+}
+
 function renderProjectView(){
   const el = document.getElementById('projectView');
   el.innerHTML = "";
-  data.projects.forEach(proj=>{
+  data.projects.forEach((proj, idx)=>{
     const card = document.createElement('div');
     card.className = "project" + (proj.collapsed ? " collapsed" : "");
 
     const head = document.createElement('div');
     head.className = "project-head";
     head.innerHTML = `<span class="caret"></span>`;
+
+    const reorder = document.createElement('div');
+    reorder.className = "reorder-btns";
+    const upBtn = document.createElement('button');
+    upBtn.className = "reorder-btn";
+    upBtn.innerHTML = "▲";
+    upBtn.disabled = idx === 0;
+    upBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      moveProject(proj.id, -1);
+    });
+    const downBtn = document.createElement('button');
+    downBtn.className = "reorder-btn";
+    downBtn.innerHTML = "▼";
+    downBtn.disabled = idx === data.projects.length - 1;
+    downBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      moveProject(proj.id, 1);
+    });
+    reorder.appendChild(upBtn);
+    reorder.appendChild(downBtn);
+
     const nameInput = document.createElement('input');
     nameInput.className = "project-name";
     nameInput.value = proj.name;
@@ -660,6 +712,7 @@ function renderProjectView(){
         save(); render();
       }
     });
+    head.appendChild(reorder);
     head.appendChild(nameInput);
     head.appendChild(countSpan);
     head.appendChild(delBtn);
